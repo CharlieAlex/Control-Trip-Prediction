@@ -1,0 +1,46 @@
+[project]
+name = "ml-project"
+version = "0.1.0"
+description = "ML model project with AutoGluon and Optuna"
+authors = [{ name = "Heisenberg", email = "charliealex0101@gmail.com" }]
+requires-python = "==3.12.5"
+
+dependencies = [
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "autogluon-timeseries",
+    "mlflow",
+    "loguru",
+    "pydantic>=2.0",
+    "heisenberg-utils",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.12.7",
+    "dvc[gs]>=3.0.0",
+    "ydata_profiling",
+]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "PL", "NPY", "PD", "TID", "T"]
+preview = true
+ignore = [
+    "E226", "E227", "E252", "E402", "B006", "B008", "B905", "C901",
+    "W191", "UP045", "PLR0913", "PLR0917", "PLR0912", "PLR0914",
+    "PLR0915", "PLR2004", "PLR6104", "PD015", "D100", "D400", "D409"
+]
+unfixable = ["D"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.uv.sources]
+heisenberg-utils = { git = "https://github.com/CharlieAlex/heisenberg-utils.git", rev = "v0.1.9" }

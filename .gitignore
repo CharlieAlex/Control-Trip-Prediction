@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.ruff_cache/
+
+# Data & Models (DVC handled)
+data/
+data_test/
+models/
+*.ipynb_checkpoints
+
+# Environment
+.env
+.env.example
+sa/*
+
+# MLflow
+mlruns/
+**/mlflow.db
+
+# OS
+.DS_Store

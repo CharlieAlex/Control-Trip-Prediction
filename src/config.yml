@@ -1,0 +1,20 @@
+experiment_name: "baseline_autogluon"
+
+data:
+  data_path: "data/data.parquet"
+  target_col: "trip_per_user"
+  timestamp_col: "trip_date"
+  item_id_col: "item_id"
+
+split:
+  test_size: 0.2
+  random_state: 42
+  stratify: null
+
+autogluon:
+  presets: "fast_training"
+  time_limit: 20
+  prediction_length: 7
+
+mlflow:
+  tracking_uri: "sqlite:///data/mlflow.db"
