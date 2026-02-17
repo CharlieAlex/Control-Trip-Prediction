@@ -48,4 +48,4 @@ def run_autogluon_train(
 
     logger.success(f"Training completed. Best validation score: {best_score}")
 
-    return predictor
+    return predictor, leaderboard

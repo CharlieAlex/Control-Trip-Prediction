@@ -46,7 +46,7 @@ def main():
         )
 
         # 4. 執行訓練 (新增 timestamp_col 和 item_id_col 參數)
-        _ = run_autogluon_train(
+        _, leaderboard = run_autogluon_train(
             train_data=train_df,
             target=config.data["target_col"],
             output_path=MODEL_DIR / current_run_name,
@@ -58,6 +58,7 @@ def main():
 
         # 5. 記錄 Artifacts
         mlflow.log_artifact(str(ROOT / "src" / "config.yml"))
+        leaderboard.to_json(ROOT / "data" / "leaderboard.json")
         logger.success("Experiment finished and tracked to MLflow.")
 
 

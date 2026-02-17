@@ -25,9 +25,15 @@ stages:
       size: 6054
     - path: scripts/train.py
       hash: md5
-      md5: a998d433501186a50e9e9c29c585d43d
-      size: 2197
-    - path: src/config.yml
+      md5: 807ef1caf70e8e876ded3b1e5847a4da
+      size: 2274
+    - path: src/
       hash: md5
-      md5: 96c97a79dfce2ecb5a6345409219da7e
-      size: 354
+      md5: 61bcc0b5f364cdcbb25f9d3b17538a34.dir
+      size: 16853
+      nfiles: 14
+    outs:
+    - path: data/leaderboard.json
+      hash: md5
+      md5: ccbf1d7c45bfecf48c9775b6c7bdcc2a
+      size: 602

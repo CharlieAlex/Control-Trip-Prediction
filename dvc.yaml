@@ -11,4 +11,7 @@ stages:
     deps:
     - data/data.parquet
     - scripts/train.py
-    - src/config.yml
+    - src/
+    metrics:
+      - data/leaderboard.json:
+          cache: false
