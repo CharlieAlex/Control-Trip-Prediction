@@ -1,0 +1,33 @@
+schema: '2.0'
+stages:
+  get_data:
+    cmd: uv run python scripts/get_data.py
+    deps:
+    - path: scripts/get_data.py
+      hash: md5
+      md5: d1dbb6f1157e59aa0978c892b668d6b3
+      size: 577
+    - path: src/queries/data.sql
+      hash: md5
+      md5: f2f964b1ed2f21fed7d7141419356c3f
+      size: 1726
+    outs:
+    - path: data/data.parquet
+      hash: md5
+      md5: d737a6818da643415eaecb7e36e115d6
+      size: 4173
+  train:
+    cmd: uv run python scripts/train.py
+    deps:
+    - path: data/data.parquet
+      hash: md5
+      md5: d737a6818da643415eaecb7e36e115d6
+      size: 4173
+    - path: scripts/train.py
+      hash: md5
+      md5: a998d433501186a50e9e9c29c585d43d
+      size: 2197
+    - path: src/config.yml
+      hash: md5
+      md5: 96c97a79dfce2ecb5a6345409219da7e
+      size: 354
