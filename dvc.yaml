@@ -1,0 +1,14 @@
+stages:
+  get_data:
+    cmd: uv run python scripts/get_data.py
+    deps:
+    - scripts/get_data.py
+    - src/queries/data.sql
+    outs:
+    - data/data.parquet
+  train:
+    cmd: uv run python scripts/train.py
+    deps:
+    - data/data.parquet
+    - scripts/train.py
+    - src/config.yml
