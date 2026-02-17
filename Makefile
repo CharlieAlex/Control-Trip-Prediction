@@ -49,6 +49,7 @@ dvc-stage:
 	git commit -m "Add dvc stage"
 
 dvc-run:
+	uv run dvc pull
 	dvc repro
 	git add dvc.lock && git commit -m "Update dvc.lock"
 	uv run dvc push
