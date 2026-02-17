@@ -1,24 +1,20 @@
 .PHONY: install clean lint test
 
-install:
+uv-sync:
 	uv sync
+
+uv-sync-dev:
+	uv sync --extra dev
 
 lint:
 	uv run ruff check . --fix
 	uv run ruff format .
 
-clean:
+clean-pycache:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
-	rm -rf .ruff_cache .venv
+	rm -rf .ruff_cache
 
-dvc-init:
-	dvc init
-	dvc remote add carplus gs://person-carplusdata-weichun/linego-control-trips
-	dvc remote modify --local carplus credentialpath 'sa/weichun.sa.json'
-	dvc config core.autostage true
-	git commit -m "Initialize DVC"
-
-get_data:
+get-data:
 	uv run python scripts/get_data.py
 
 train:
@@ -29,13 +25,15 @@ mlflow:
 		--backend-store-uri sqlite:///data/mlflow.db \
 		--port 5000
 
-dvc-test:
-	dvc add data/data.csv
-	git add data/data.csv.dvc data/.gitignore
-	git commit -m "Add data/data.csv"
-	uv run dvc push
+dvc-init:
+	dvc init
+	dvc remote add -d carplus gs://person-carplusdata-weichun/linego-control-trips
+	dvc remote modify --local carplus credentialpath 'sa/weichun.sa.json'
+	dvc config core.autostage true
+	git add .dvc/config
+	git commit -m "Initialize DVC"
 
-dvc-test2:
+dvc-stage:
 	dvc stage add -n get_data \
 		-d src/queries/data.sql \
 		-d scripts/get_data.py \
@@ -45,8 +43,12 @@ dvc-test2:
 	dvc stage add -n train \
 		-d src/config.yml \
 		-d scripts/train.py \
-		-o data/data.parquet \
+		-d data/data.parquet \
 		uv run python scripts/train.py
 
-	git add dvc.yaml data/.gitignore
-	git commit -m "Add train stage"
+	git commit -m "Add dvc stage"
+
+dvc-run:
+	dvc repro
+	git add dvc.lock && git commit -m "Update dvc.lock"
+	uv run dvc push
