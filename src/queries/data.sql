@@ -1,5 +1,5 @@
 DECLARE target_date_start DATE DEFAULT DATE("2025-07-28");
-DECLARE target_date_end DATE DEFAULT DATE("2025-09-10");
+DECLARE target_date_end DATE DEFAULT DATE("2025-12-10");
 
 
 WITH clean_sample AS (

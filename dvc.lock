@@ -9,20 +9,20 @@ stages:
       size: 577
     - path: src/queries/data.sql
       hash: md5
-      md5: f2f964b1ed2f21fed7d7141419356c3f
+      md5: 0b7851390a3eee1f9252d3d3f082d548
       size: 1726
     outs:
     - path: data/data.parquet
       hash: md5
-      md5: d737a6818da643415eaecb7e36e115d6
-      size: 4173
+      md5: a383dbfd06a73732e50e9c10f0a05c26
+      size: 6054
   train:
     cmd: uv run python scripts/train.py
     deps:
     - path: data/data.parquet
       hash: md5
-      md5: d737a6818da643415eaecb7e36e115d6
-      size: 4173
+      md5: a383dbfd06a73732e50e9c10f0a05c26
+      size: 6054
     - path: scripts/train.py
       hash: md5
       md5: a998d433501186a50e9e9c29c585d43d
