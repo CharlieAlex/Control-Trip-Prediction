@@ -41,7 +41,7 @@ dvc-stage:
 		uv run python scripts/get_data.py
 
 	dvc stage add -n train \
-		-d src/config.yml \
+		-d config.yml \
 		-d scripts/train.py \
 		-d data/data.parquet \
 		uv run python scripts/train.py
@@ -53,3 +53,6 @@ dvc-run:
 	dvc repro
 	git add dvc.lock && git commit -m "Update dvc.lock"
 	uv run dvc push
+
+run:
+	dvc repro

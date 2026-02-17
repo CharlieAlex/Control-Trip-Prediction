@@ -22,7 +22,7 @@ from src.trainer import run_autogluon_train
 
 def main():
     # 1. 初始化路徑與配置
-    config = load_config(ROOT / "src" / "config.yml")
+    config = load_config(ROOT / "config.yml")
     mlflow.set_tracking_uri(config.mlflow["tracking_uri"])
     mlflow.set_experiment(config.experiment_name)
 
@@ -57,7 +57,7 @@ def main():
         )
 
         # 5. 記錄 Artifacts
-        mlflow.log_artifact(str(ROOT / "src" / "config.yml"))
+        mlflow.log_artifact(str(ROOT / "config.yml"))
         leaderboard.to_json(ROOT / "data" / "leaderboard.json")
         logger.success("Experiment finished and tracked to MLflow.")
 
