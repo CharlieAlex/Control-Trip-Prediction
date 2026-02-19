@@ -9,6 +9,7 @@ __pycache__/
 data/
 data_test/
 models/
+plots/
 *.ipynb_checkpoints
 
 # Environment
