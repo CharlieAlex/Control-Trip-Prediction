@@ -36,10 +36,10 @@ def split_data(
             raise ValueError(f"Data must have a '{timestamp_col}' column or DatetimeIndex")
 
     # 確保 timestamp 是 datetime 型別
-    df[timestamp_col] = pd.to_datetime(df[timestamp_col])
+    df['timestamp'] = pd.to_datetime(df[timestamp_col])
 
     # 按時間排序
-    df = df.sort_values([item_id_col, timestamp_col])
+    df = df.sort_values([item_id_col, 'timestamp'])
 
     # 對時間序列資料使用時間切分而非隨機切分
     if stratify:
