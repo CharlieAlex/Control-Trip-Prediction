@@ -11,9 +11,11 @@ def run_autogluon_train(
     target: str,
     output_path: Path,
     presets="medium_quality",
+    time_limit: int = 15,
     prediction_length: int = 7,
     timestamp_col: str = "timestamp",
-    item_id_col: str = "item_id"
+    item_id_col: str = "item_id",
+    known_covariates_names: list[str] = None
 ):
     """執行 AutoGluon TimeSeries 訓練"""
     logger.info(f"Starting AutoGluon TimeSeries training on target: {target}")
@@ -25,7 +27,6 @@ def run_autogluon_train(
         raise ValueError(f"Missing required columns: {missing_cols}")
 
     # 轉換為 TimeSeriesDataFrame
-    train_data['timestamp'] = pd.to_datetime(train_data['trip_date'])
     logger.info(train_data.head())
     logger.info(f"Converting to TimeSeriesDataFrame with columns: {train_data.columns.tolist()}")
     train_data = TimeSeriesDataFrame(train_data)
@@ -36,7 +37,13 @@ def run_autogluon_train(
         prediction_length=prediction_length,
         path=str(output_path),
         freq='D',
-    ).fit(train_data, presets=presets)
+        known_covariates_names=known_covariates_names,
+    )
+    predictor.fit(
+        train_data,
+        presets=presets,
+        time_limit=time_limit,
+    )
 
     # 記錄指標到 MLflow
     leaderboard = predictor.leaderboard(silent=False)
