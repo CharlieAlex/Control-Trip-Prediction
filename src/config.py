@@ -22,7 +22,8 @@ class AutoGluonConfig(BaseModel):
     presets: str = "medium_quality"
     time_limit: int = 15
     prediction_length: int = 7
-    freq: str = "D"  # 建議將頻率也抽出來，預設為 D (日)
+    freq: str = "D"
+    evaluation_stride: int = 5
 
 
 class MLflowConfig(BaseModel):
