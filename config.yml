@@ -5,16 +5,16 @@ data:
   target_col: "trip_per_user"
   timestamp_col: "trip_date"
   item_id_col: "item_id"
+  known_covariates_names: ["user_count"]
 
 split:
   test_size: 0.2
   random_state: 42
-  stratify: null
 
 autogluon:
   presets: "fast_training"
-  time_limit: 15
-  prediction_length: 7
+  time_limit: 30
+  prediction_length: 10
 
 mlflow:
   tracking_uri: "sqlite:///data/mlflow.db"
