@@ -18,8 +18,7 @@ from src.config import load_config
 from src.paths import MODEL_DIR, ROOT
 from src.plot import (
     plot_feature_importance,
-    plot_forecast,
-    plot_forecast_with_actual,
+    plot_forecast_for_testing,
     plot_leaderboard,
 )
 from src.preprocess import split_data
@@ -58,8 +57,7 @@ def main():
             test_df=test_df,
             config=config
         )
-        plot_forecast(predictor, test_df, predictions, plots_dir)
-        plot_forecast_with_actual(predictor, df, predictions, plots_dir)
+        plot_forecast_for_testing(train_df, test_df, predictions, config, plots_dir)
         plot_feature_importance(predictor, test_df, plots_dir)
         plot_leaderboard(leaderboard, plots_dir)
 
