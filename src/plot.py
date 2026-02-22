@@ -54,9 +54,9 @@ def plot_forecast(
     )
     fig = plt.gcf()  # predictor.plot() 使用現有的 figure
 
-    out_path = plots_dir / filename
-    save_plot_to_mlflow(fig, out_path, mlflow_subdir)
-    return out_path
+    save_plot_to_mlflow(fig, plots_dir, mlflow_subdir, filename)
+
+    return plots_dir / filename
 
 
 def plot_feature_importance(
@@ -118,9 +118,9 @@ def plot_feature_importance(
     ax.grid(axis="x", linestyle="--", alpha=0.5)
     fig.tight_layout()
 
-    out_path = plots_dir / filename
-    save_plot_to_mlflow(fig, out_path, mlflow_subdir)
-    return out_path
+    save_plot_to_mlflow(fig, plots_dir, mlflow_subdir, filename)
+
+    return plots_dir / filename
 
 
 def plot_leaderboard(
@@ -196,9 +196,9 @@ def plot_leaderboard(
     ax.grid(axis="x", linestyle="--", alpha=0.5)
     fig.tight_layout()
 
-    out_path = plots_dir / filename
-    save_plot_to_mlflow(fig, out_path, mlflow_subdir)
-    return out_path
+    save_plot_to_mlflow(fig, plots_dir, mlflow_subdir, filename)
+
+    return plots_dir / filename
 
 
 def plot_forecast_for_testing(
@@ -209,7 +209,7 @@ def plot_forecast_for_testing(
     plots_dir: Path,
     filename: str = "forecast_for_testing.png",
     mlflow_subdir: str = "plots",
-):
+) -> Path:
     """
     繪製時間序列預測圖表。
     包含實際發生歷史(實線)、多個滑動視窗的預測值(虛線)與90%信賴區間。
@@ -283,7 +283,7 @@ def plot_forecast_for_testing(
         ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1))
 
     plt.tight_layout()
-    out_path = plots_dir / filename
-    save_plot_to_mlflow(fig, out_path, mlflow_subdir)
 
-    return fig
+    save_plot_to_mlflow(fig, plots_dir, mlflow_subdir, filename)
+
+    return plots_dir / filename
