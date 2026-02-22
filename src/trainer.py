@@ -47,13 +47,11 @@ def run_autogluon_train(
 
     # 記錄指標到 MLflow
     leaderboard = predictor.leaderboard(silent=False)
-    best_score = leaderboard.iloc[0]["score_val"]
-    mlflow.log_text(leaderboard.to_markdown(), "autogluon_leaderboard.md")
-    mlflow.log_metric("ag_best_score", leaderboard.iloc[0]["score_val"])
-    mlflow.set_tag("ag_best_model", leaderboard.iloc[0]["model"])
-    mlflow.log_metric("best_val_score", best_score)
 
-    logger.success(f"Training completed. Best validation score: {best_score}")
+    if leaderboard.empty:
+        raise ValueError("Leaderboard is empty. No models were successfully trained.")
+
+    save_leaderboard_to_mlflow(leaderboard)
 
     return predictor, leaderboard
 
