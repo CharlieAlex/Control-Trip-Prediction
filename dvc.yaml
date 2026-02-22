@@ -10,6 +10,7 @@ stages:
     cmd: uv run python scripts/train.py
     deps:
     - data/data.parquet
+    - config.yml
     - scripts/train.py
     - src/
     metrics:
