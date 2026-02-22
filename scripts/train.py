@@ -54,6 +54,7 @@ def main():
         plots_dir = ROOT / "plots"
         predictions = run_autogluon_test(
             predictor=predictor,
+            train_df=train_df,
             test_df=test_df,
             config=config
         )
