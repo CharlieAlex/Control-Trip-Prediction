@@ -55,7 +55,7 @@ WITH clean_sample AS (
 )
 
 SELECT
-    a.trip_date,
+    a.trip_date AS `timestamp`,
     1 AS item_id,
     b.user_count,
     a.trip_count / b.user_count AS trip_per_user

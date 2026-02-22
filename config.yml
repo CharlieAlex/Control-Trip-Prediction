@@ -3,7 +3,7 @@ experiment_name: "baseline_autogluon"
 data:
   data_path: "data/data.parquet"
   target_col: "trip_per_user"
-  timestamp_col: "trip_date"
+  timestamp_col: "timestamp"
   item_id_col: "item_id"
   known_covariates_names: ["user_count"]
 
