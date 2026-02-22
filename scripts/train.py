@@ -16,8 +16,14 @@ sys.path.append(str(MAIN_PATH))
 
 from src.config import load_config
 from src.paths import MODEL_DIR, ROOT
+from src.plot import (
+    plot_feature_importance,
+    plot_forecast,
+    plot_forecast_with_actual,
+    plot_leaderboard,
+)
 from src.preprocess import split_data
-from src.trainer import run_autogluon_train
+from src.trainer import run_autogluon_test, run_autogluon_train
 
 
 def main():
@@ -56,7 +62,19 @@ def main():
             item_id_col=config.data.get("item_id_col", "item_id"),
         )
 
-        # 5. 記錄 Artifacts
+        # 5. 繪製圖表
+        plots_dir = ROOT / "plots"
+        predictions = run_autogluon_test(
+            predictor=predictor,
+            test_df=test_df,
+            config=config
+        )
+        plot_forecast(predictor, test_df, predictions, plots_dir)
+        plot_forecast_with_actual(predictor, df, predictions, plots_dir)
+        plot_feature_importance(predictor, test_df, plots_dir)
+        plot_leaderboard(leaderboard, plots_dir)
+
+        # 6. 記錄 Artifacts
         mlflow.log_artifact(str(ROOT / "config.yml"))
         leaderboard.to_json(ROOT / "data" / "leaderboard.json")
         logger.success("Experiment finished and tracked to MLflow.")

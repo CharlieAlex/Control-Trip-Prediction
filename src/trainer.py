@@ -56,3 +56,39 @@ def run_autogluon_train(
     logger.success(f"Training completed. Best validation score: {best_score}")
 
     return predictor, leaderboard
+
+
+def run_autogluon_test(predictor, test_df, config):
+
+    cov_names = config.data.get("known_covariates_names", [])
+    time_col = "timestamp" if "timestamp" in test_df.columns else "trip_date"
+
+    test_data = TimeSeriesDataFrame.from_data_frame(
+        test_df,
+        id_column="item_id",
+        timestamp_column=time_col
+    )
+
+    known_covariates = None
+    if cov_names:
+        # 用 make_future_data_frame 生成正確的未來時間點 index
+        future_df = predictor.make_future_data_frame(test_data)
+
+        # 將 test_df 的 covariate 值 merge 進去
+        cov_source = test_df[["item_id", time_col] + cov_names].copy()
+        future_df = future_df.reset_index()
+        future_df = future_df.merge(
+            cov_source,
+            on=["item_id", time_col],
+            how="left"
+        )
+
+        known_covariates = TimeSeriesDataFrame.from_data_frame(
+            future_df,
+            id_column="item_id",
+            timestamp_column=time_col
+        )
+
+    predictions = predictor.predict(test_data, known_covariates=known_covariates)
+
+    return predictions
