@@ -38,6 +38,7 @@ def main():
 
         # 2. 載入資料
         df = pd.read_parquet(ROOT / config.data.data_path)
+        df[config.data.item_id_col] = df[config.data.item_id_col].astype(str)  # NOTE: 之後再從sql改
 
         # 3. 分割資料 (新增 timestamp_col 和 item_id_col 參數)
         train_df, test_df = split_data(df=df, config=config)
