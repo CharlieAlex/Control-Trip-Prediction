@@ -29,7 +29,7 @@ dvc-init:
 	dvc init
 	dvc remote add -d carplus gs://person-carplusdata-weichun/linego-control-trips
 	dvc remote modify --local carplus credentialpath 'sa/weichun.sa.json'
-	dvc config core.autostage true
+	dvc config core.autostage false
 	git add .dvc/config
 	git commit -m "Initialize DVC"
 

@@ -1,5 +1,5 @@
 [core]
-    autostage = true
+    autostage = false
     remote = carplus
 ['remote "carplus"']
     url = gs://person-carplusdata-weichun/linego-control-trips
