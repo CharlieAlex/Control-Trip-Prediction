@@ -9,6 +9,7 @@ from sklearn.metrics import mean_squared_error
 
 from .config import ExperimentConfig
 from .io import save_leaderboard_to_mlflow
+from .utils import sanitize_mlflow_name
 
 
 def run_autogluon_train(
@@ -154,14 +155,14 @@ def run_autogluon_test(
                 model_metrics[model_name].append(rmse)
 
                 # 處理模型名稱中的特殊符號，確保 MLflow 標籤格式合法
-                safe_model_name = model_name.replace("/", "_").replace("\\", "_")
+                safe_model_name = sanitize_mlflow_name(model_name)
                 mlflow.log_metric(f"{safe_model_name}_window_rmse", rmse, step=w_idx)
 
     # 4. 記錄整體平均指標
     for model_name, metrics in model_metrics.items():
         if metrics:
             avg_rmse = np.mean(metrics)
-            safe_model_name = model_name.replace("/", "_").replace("\\", "_")
+            safe_model_name = sanitize_mlflow_name(model_name)
             mlflow.log_metric(f"{safe_model_name}_avg_rmse", avg_rmse)
             logger.success(f"Model [{model_name}] Average RMSE: {avg_rmse:.4f}")
 

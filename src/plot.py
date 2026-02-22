@@ -9,6 +9,7 @@ from loguru import logger
 
 from .config import ExperimentConfig
 from .io import save_plot_to_mlflow
+from .utils import sanitize_mlflow_name
 
 
 def plot_forecast(
@@ -308,7 +309,7 @@ def plot_forecast_for_testing(
             plt.tight_layout()
 
             # 儲存
-            safe_model_name = model_name.replace("/", "_").replace("\\", "_")
+            safe_model_name = sanitize_mlflow_name(model_name)
             filename = f"forecast_{safe_model_name}_{item}.png"
 
             save_plot_to_mlflow(fig, plots_dir, mlflow_subdir, filename)
