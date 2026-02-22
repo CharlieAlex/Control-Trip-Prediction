@@ -41,15 +41,7 @@ def main():
         df = pd.read_parquet(ROOT / config.data["data_path"])
 
         # 3. 分割資料 (新增 timestamp_col 和 item_id_col 參數)
-        train_df, test_df = split_data(
-            df=df,
-            target_col=config.data["target_col"],
-            test_size=config.split["test_size"],
-            random_state=config.split["random_state"],
-            stratify=config.split.get("stratify"),
-            timestamp_col=config.data.get("timestamp_col", "timestamp"),
-            item_id_col=config.data.get("item_id_col", "item_id"),
-        )
+        train_df, test_df = split_data(df=df, config=config)
 
         # 4. 執行訓練 (新增 timestamp_col 和 item_id_col 參數)
         predictor, leaderboard = run_autogluon_train(
