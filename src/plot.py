@@ -1,56 +1,13 @@
-from __future__ import annotations
-
-import logging
 from pathlib import Path
 
-import matplotlib
-from autogluon.timeseries import TimeSeriesDataFrame
-
-matplotlib.use("Agg")  # 非互動式後端，避免 GUI 相依
 import matplotlib.pyplot as plt
-import mlflow
 import pandas as pd
+import seaborn as sns
+from loguru import logger
 
-logger = logging.getLogger(__name__)
+from .config import ExperimentConfig
+from .io import save_plot_to_mlflow
 
-
-# ---------------------------------------------------------------------------
-# 共用工具
-# ---------------------------------------------------------------------------
-
-def _save_and_log(fig: plt.Figure, path: Path, mlflow_subdir: str = "plots") -> None:
-    """儲存圖片到磁碟，並上傳到 MLflow Artifacts。"""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-    mlflow.log_artifact(str(path), artifact_path=mlflow_subdir)
-    logger.info("Saved and logged to MLflow: %s", path.name)
-
-
-def prepare_timeseries_data(df: pd.DataFrame, date_col: str = "trip_date") -> TimeSeriesDataFrame:
-    """
-    將一般 DataFrame 轉換為 AutoGluon TimeSeriesDataFrame。
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        原始資料，需包含 ``date_col`` 欄位。
-    date_col : str
-        日期欄位名稱，預設 ``"trip_date"``。
-
-    Returns
-    -------
-    TimeSeriesDataFrame
-    """
-
-    data = df.copy()
-    data["timestamp"] = pd.to_datetime(data[date_col])
-    return TimeSeriesDataFrame(data)
-
-
-# ---------------------------------------------------------------------------
-# 圖 1：Forecast Plot
-# ---------------------------------------------------------------------------
 
 def plot_forecast(
     predictor,
@@ -98,98 +55,8 @@ def plot_forecast(
     fig = plt.gcf()  # predictor.plot() 使用現有的 figure
 
     out_path = plots_dir / filename
-    _save_and_log(fig, out_path, mlflow_subdir)
+    save_plot_to_mlflow(fig, out_path, mlflow_subdir)
     return out_path
-
-
-def plot_forecast_with_actual(
-    predictor,
-    data: pd.DataFrame,
-    predictions,                   # ← 外部傳入，不在函數內重新 predict
-    plots_dir: Path,
-    quantile_levels: list[float] | None = None,
-    target_col: str = "trip_per_user",
-    item_ids: list | None = None,
-    n_context_days: int = 30,
-    horizon: int = 10,
-    filename: str = "forecast_with_actual.png",
-    mlflow_subdir: str = "plots",
-) -> Path:
-    if quantile_levels is None:
-        quantile_levels = [0.1, 0.9]
-
-    ts_data = TimeSeriesDataFrame.from_data_frame(
-        data,
-        id_column="item_id",
-        timestamp_column="timestamp",
-    )
-
-    all_ids = ts_data.item_ids.tolist()
-    ids_to_plot = item_ids if item_ids is not None else all_ids[:6]
-
-    n = len(ids_to_plot)
-    fig, axes = plt.subplots(n, 1, figsize=(14, 4 * n), squeeze=False)
-
-    for ax, item_id in zip(axes[:, 0], ids_to_plot):
-        mask = ts_data.index.get_level_values(0) == item_id
-        full_df = ts_data[mask]
-        full_ts = full_df.index.get_level_values(1)
-        full_vals = full_df[target_col].to_numpy()
-
-        # forecast 的時間點
-        mask_pred = predictions.index.get_level_values(0) == item_id
-        pred_df = predictions[mask_pred]
-        pred_ts = pred_df.index.get_level_values(1)
-        pred_mean = pred_df["mean"] if "mean" in pred_df.columns else pred_df.iloc[:, 0]
-
-        # actual：從 full_data 找出和 pred_ts 時間點完全一致的列
-        full_ts_index = pd.DatetimeIndex(full_ts)
-        actual_mask = full_ts_index.isin(pred_ts)
-        actual_ts = full_ts[actual_mask]
-        actual_vals = full_vals[actual_mask]
-
-        # 歷史：pred 開始之前的 n_context_days 天
-        history_mask = full_ts_index < pred_ts[0]
-        history_ts = full_ts[history_mask][-n_context_days:]
-        history_vals = full_vals[history_mask][-n_context_days:]
-
-        ax.plot(history_ts, history_vals, label="History",
-                color="gray", linewidth=1.2, alpha=0.6)
-        ax.plot(actual_ts, actual_vals, label="Actual",
-                color="steelblue", linewidth=2.0)
-        ax.plot(pred_ts, pred_mean.values, label="Forecast",
-                color="tomato", linewidth=1.8, linestyle="--")
-
-        if len(quantile_levels) >= 2:
-            q_low = str(quantile_levels[0])
-            q_high = str(quantile_levels[-1])
-            if q_low in pred_df.columns and q_high in pred_df.columns:
-                ax.fill_between(
-                    pred_ts,
-                    pred_df[q_low].values,
-                    pred_df[q_high].values,
-                    alpha=0.2, color="tomato",
-                    label=f"PI [{q_low}–{q_high}]",
-                )
-
-        if len(actual_ts) > 0:
-            ax.axvline(x=actual_ts[0], color="black", linestyle=":", linewidth=1.0, alpha=0.7)
-
-        ax.set_title(f"Item: {item_id}")
-        ax.legend(loc="upper left")
-        ax.grid(True, linestyle="--", alpha=0.4)
-
-    fig.suptitle(f"Forecast vs Actual (last {horizon} days)",
-                 fontsize=15, fontweight="bold", y=1.01)
-    fig.tight_layout()
-
-    out_path = plots_dir / filename
-    _save_and_log(fig, out_path, mlflow_subdir)
-    return out_path
-
-# ---------------------------------------------------------------------------
-# 圖 2：Feature Importance
-# ---------------------------------------------------------------------------
 
 
 def plot_feature_importance(
@@ -252,13 +119,9 @@ def plot_feature_importance(
     fig.tight_layout()
 
     out_path = plots_dir / filename
-    _save_and_log(fig, out_path, mlflow_subdir)
+    save_plot_to_mlflow(fig, out_path, mlflow_subdir)
     return out_path
 
-
-# ---------------------------------------------------------------------------
-# 圖 3：Leaderboard Comparison（取代 plot_cross_validation）
-# ---------------------------------------------------------------------------
 
 def plot_leaderboard(
     leaderboard: pd.DataFrame,
@@ -334,5 +197,5 @@ def plot_leaderboard(
     fig.tight_layout()
 
     out_path = plots_dir / filename
-    _save_and_log(fig, out_path, mlflow_subdir)
+    save_plot_to_mlflow(fig, out_path, mlflow_subdir)
     return out_path
