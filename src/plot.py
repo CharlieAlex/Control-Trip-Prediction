@@ -1,6 +1,7 @@
 import math
 from pathlib import Path
 
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -232,7 +233,7 @@ def plot_forecast_for_testing(
             fig, axes = plt.subplots(
                 nrows=nrows,
                 ncols=ncols,
-                figsize=(6 * ncols, 5 * nrows),
+                figsize=(15 * ncols, 5 * nrows),
                 squeeze=False
             )
             axes = axes.flatten()
@@ -291,6 +292,8 @@ def plot_forecast_for_testing(
 
                     # 【優化】設定 X 軸顯示範圍，確保畫面比例固定
                     ax.set_xlim(history_start, pred_end)
+                    ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=5))
+                    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
 
                 ax.set_title(f"{window_name}", fontsize=12)
                 ax.set_xlabel("Time")
