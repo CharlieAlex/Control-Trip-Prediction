@@ -1,4 +1,4 @@
-DECLARE target_date_start DATE DEFAULT DATE("2025-07-28");
+DECLARE target_date_start DATE DEFAULT DATE("2025-08-18");
 DECLARE target_date_end DATE DEFAULT DATE("2026-02-15");
 
 
