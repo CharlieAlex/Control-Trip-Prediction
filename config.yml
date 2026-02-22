@@ -8,14 +8,14 @@ data:
   known_covariates_names: ["user_count"]
 
 split:
-  test_size: 0.2
+  test_size: 0.1
   random_state: 42
 
 autogluon:
-  presets: "fast_training"
-  time_limit: 30
+  presets: "high_quality"
+  time_limit: 300
   prediction_length: 10
-  plot_history_days: 60
+  plot_history_days: 30
 
 mlflow:
   tracking_uri: "sqlite:///data/mlflow.db"

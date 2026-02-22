@@ -9,35 +9,35 @@ stages:
       size: 577
     - path: src/queries/data.sql
       hash: md5
-      md5: 347263b884dcdbdf2f56f4cb3aa9099d
-      size: 1708
+      md5: 70616eb5e436fb4a16d0fa6ab59a7740
+      size: 1723
     outs:
     - path: data/data.parquet
       hash: md5
-      md5: efd18fa92ad5dc31104cabe504bc3413
-      size: 5884
+      md5: 2e58ede39a7d6499f58ae76d7ab61330
+      size: 5672
   train:
     cmd: uv run python scripts/train.py
     deps:
     - path: config.yml
       hash: md5
-      md5: 80ed6c55b41d3a5ccd0e8cb31ad57d9f
-      size: 379
+      md5: 7d0e0e14b647dcbaeb42f29b70b31352
+      size: 403
     - path: data/data.parquet
       hash: md5
-      md5: efd18fa92ad5dc31104cabe504bc3413
-      size: 5884
+      md5: 2e58ede39a7d6499f58ae76d7ab61330
+      size: 5672
     - path: scripts/train.py
       hash: md5
-      md5: d68f55664f1975a08d8e2c26c0ed08d0
-      size: 2528
+      md5: 022bbd52a731d6c909bc002120ed3496
+      size: 2290
     - path: src/
       hash: md5
-      md5: f12104a88438fe83b8634c5f73953b84.dir
-      size: 56614
-      nfiles: 17
+      md5: ac05d3008128099c45c51689cb56e72b.dir
+      size: 54655
+      nfiles: 19
     outs:
     - path: data/leaderboard.json
       hash: md5
-      md5: 4dd947f01f902b0bf2b2f71f629c921f
-      size: 531
+      md5: 206eae112c9150ee577fa41b772cc73f
+      size: 980
