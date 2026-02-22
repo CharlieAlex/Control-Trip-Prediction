@@ -29,7 +29,7 @@ from src.trainer import run_autogluon_test, run_autogluon_train
 def main():
     # 1. 初始化路徑與配置
     config = load_config(ROOT / "config.yml")
-    mlflow.set_tracking_uri(config.mlflow["tracking_uri"])
+    mlflow.set_tracking_uri(config.mlflow.tracking_uri)
     mlflow.set_experiment(config.experiment_name)
 
     with mlflow.start_run() as run:
@@ -38,22 +38,16 @@ def main():
         logger.info(f"Experiment started. Run ID: {current_run_id}, Run Name: {current_run_name}")
 
         # 2. 載入資料
-        df = pd.read_parquet(ROOT / config.data["data_path"])
+        df = pd.read_parquet(ROOT / config.data.data_path)
 
         # 3. 分割資料 (新增 timestamp_col 和 item_id_col 參數)
         train_df, test_df = split_data(df=df, config=config)
 
         # 4. 執行訓練 (新增 timestamp_col 和 item_id_col 參數)
         predictor, leaderboard = run_autogluon_train(
-            train_data=train_df,
-            target=config.data["target_col"],
-            output_path=MODEL_DIR / current_run_name,
-            presets=config.autogluon["presets"],
-            time_limit=config.autogluon["time_limit"],
-            prediction_length=config.autogluon["prediction_length"],
-            timestamp_col=config.data.get("timestamp_col", "timestamp"),
-            item_id_col=config.data.get("item_id_col", "item_id"),
-            known_covariates_names=config.data.get("known_covariates_names", None)
+            train_df=train_df,
+            config=config,
+            output_path=MODEL_DIR / current_run_name
         )
 
         # 5. 繪製圖表

@@ -4,45 +4,46 @@ import mlflow
 import pandas as pd
 from autogluon.timeseries import TimeSeriesDataFrame, TimeSeriesPredictor
 from loguru import logger
+from .config import ExperimentConfig
 
 
 def run_autogluon_train(
-    train_data: pd.DataFrame,
-    target: str,
-    output_path: Path,
-    presets="medium_quality",
-    time_limit: int = 15,
-    prediction_length: int = 7,
-    timestamp_col: str = "timestamp",
-    item_id_col: str = "item_id",
-    known_covariates_names: list[str] = None
+    train_df: pd.DataFrame,
+    config: ExperimentConfig,
+    output_path: Path
 ):
     """執行 AutoGluon TimeSeries 訓練"""
-    logger.info(f"Starting AutoGluon TimeSeries training on target: {target}")
+    # 建立捷徑變數，方便後續呼叫
+    config_data = config.data
+    config_ag = config.autogluon
 
     # 確保資料格式正確
-    required_cols = [item_id_col, timestamp_col, target]
-    missing_cols = [col for col in required_cols if col not in train_data.columns]
+    required_cols = {config_data.item_id_col, config_data.timestamp_col, config_data.target_col}
+    missing_cols = required_cols - set(train_df.columns)
     if missing_cols:
-        raise ValueError(f"Missing required columns: {missing_cols}")
+        raise ValueError(f"Missing required columns: {sorted(missing_cols)}")
 
-    # 轉換為 TimeSeriesDataFrame
-    logger.info(train_data.head())
-    logger.info(f"Converting to TimeSeriesDataFrame with columns: {train_data.columns.tolist()}")
-    train_data = TimeSeriesDataFrame(train_data)
-
-    # 建立預測器
-    predictor = TimeSeriesPredictor(
-        target=target,
-        prediction_length=prediction_length,
-        path=str(output_path),
-        freq='D',
-        known_covariates_names=known_covariates_names,
+    # 轉換資料
+    ts_dataframe = TimeSeriesDataFrame.from_data_frame(
+        train_df,
+        id_column=config_data.item_id_col,
+        timestamp_column=config_data.timestamp_col
     )
+
+    # 建立模型
+    predictor = TimeSeriesPredictor(
+        target=config_data.target_col,
+        prediction_length=config_ag.prediction_length,
+        path=str(output_path),
+        freq=config_ag.freq,
+        known_covariates_names=config_data.known_covariates_names,
+    )
+
+    # 開始訓練
     predictor.fit(
-        train_data,
-        presets=presets,
-        time_limit=time_limit,
+        ts_dataframe,
+        presets=config_ag.presets,
+        time_limit=config_ag.time_limit,
     )
 
     # 記錄指標到 MLflow
