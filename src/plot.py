@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -12,7 +13,6 @@ from .io import save_plot_to_mlflow
 def plot_forecast(
     predictor,
     test_data,
-    predictions,
     plots_dir: Path,
     quantile_levels: list[float] | None = None,
     filename: str = "forecast_plot.png",
@@ -28,8 +28,6 @@ def plot_forecast(
         已訓練完成的 predictor。
     test_data : TimeSeriesDataFrame
         測試集（已轉換為 TimeSeriesDataFrame）。
-    predictions : TimeSeriesDataFrame
-        由 ``predictor.predict(test_data)`` 產生的預測結果。
     plots_dir : Path
         圖片存放目錄。
     quantile_levels : list[float], optional
@@ -47,6 +45,7 @@ def plot_forecast(
     if quantile_levels is None:
         quantile_levels = [0.1, 0.9]
 
+    predictions = predictor.predict(test_data)
     predictor.plot(
         test_data,
         predictions=predictions,
@@ -204,86 +203,114 @@ def plot_leaderboard(
 def plot_forecast_for_testing(
     train_df: pd.DataFrame,
     test_df: pd.DataFrame,
-    window_predictions: dict,
+    all_model_predictions: dict,
     config: ExperimentConfig,
     plots_dir: Path,
-    filename: str = "forecast_for_testing.png",
     mlflow_subdir: str = "plots",
-) -> Path:
+) -> list[Path]:
     """
-    繪製時間序列預測圖表。
-    包含實際發生歷史(實線)、多個滑動視窗的預測值(虛線)與90%信賴區間。
+    繪製時間序列預測圖表 (Grid 版本 + 局部時間放大)。
+    只顯示預測開始前 N 天與預測期間的實際值與預測值。
     """
     data_cfg = config.data
+    ag_cfg = config.autogluon
     sns.set_theme(style="whitegrid")
 
-    # 合併完整的實際資料
     full_actuals = pd.concat([train_df, test_df], ignore_index=True)
     items = full_actuals[data_cfg.item_id_col].unique()
 
-    # 建立子圖，每個 item_id 一張圖
-    fig, axes = plt.subplots(nrows=len(items), ncols=1, figsize=(14, 5 * len(items)), squeeze=False)
+    saved_paths = []
 
-    # 定義顏色與樣式
-    color_palette = sns.color_palette("husl", len(window_predictions))
+    for model_name, window_predictions in all_model_predictions.items():
+        for item in items:
+            item_actuals = full_actuals[full_actuals[data_cfg.item_id_col] == item]
 
-    for idx, item in enumerate(items):
-        ax = axes[idx, 0]
+            n_windows = len(window_predictions)
+            ncols = min(2, n_windows)
+            nrows = math.ceil(n_windows / ncols) if n_windows > 0 else 1
 
-        # 1. 繪製實際值 (Solid line)
-        item_actuals = full_actuals[full_actuals[data_cfg.item_id_col] == item]
-        sns.lineplot(
-            data=item_actuals,
-            x=data_cfg.timestamp_col,
-            y=data_cfg.target_col,
-            ax=ax,
-            label="Actual Target",
-            color="black",
-            linewidth=2,
-            linestyle="-"
-        )
+            fig, axes = plt.subplots(
+                nrows=nrows,
+                ncols=ncols,
+                figsize=(6 * ncols, 5 * nrows),
+                squeeze=False
+            )
+            axes = axes.flatten()
 
-        # 2. 繪製每個預測視窗 (Dashed line + CI)
-        for w_idx, (window_name, preds) in enumerate(window_predictions.items()):
-            # 取得該 item 的預測資料
-            if item in preds.index.get_level_values(0):
-                item_preds = preds.loc[item].reset_index()
+            for w_idx, (window_name, preds) in enumerate(window_predictions.items()):
+                ax = axes[w_idx]
 
-                # 【關鍵修復】將 AutoGluon 預設的 "timestamp" 轉回設定檔中的名稱
-                item_preds = item_preds.rename(columns={
-                    "timestamp": data_cfg.timestamp_col
-                })
+                if item in preds.index.get_level_values(0):
+                    item_preds = preds.loc[item].reset_index()
+                    item_preds = item_preds.rename(columns={"timestamp": data_cfg.timestamp_col})
 
-                color = color_palette[w_idx]
+                    # 【優化】計算該 window 的時間範圍
+                    pred_start = item_preds[data_cfg.timestamp_col].min()
+                    pred_end = item_preds[data_cfg.timestamp_col].max()
+                    history_start = pred_start - pd.Timedelta(days=ag_cfg.plot_history_days)
 
-                # 繪製預測平均值
-                sns.lineplot(
-                    data=item_preds,
-                    x=data_cfg.timestamp_col,
-                    y="mean",
-                    ax=ax,
-                    label=f"Prediction ({window_name})",
-                    color=color,
-                    linestyle="--",
-                    linewidth=2
-                )
+                    # 【優化】篩選該 window 專屬的實際值範圍 (歷史 60 天 + 預測 N 天)
+                    window_actuals = item_actuals[
+                        (item_actuals[data_cfg.timestamp_col] >= history_start) &
+                        (item_actuals[data_cfg.timestamp_col] <= pred_end)
+                    ]
 
-                # 繪製 90% 信賴區間 (0.1 ~ 0.9 quantiles)
-                if "0.1" in item_preds.columns and "0.9" in item_preds.columns:
-                    ax.fill_between(
-                        item_preds[data_cfg.timestamp_col],
-                        item_preds["0.1"],
-                        item_preds["0.9"],
-                        color=color,
-                        alpha=0.2
+                    # 1. 畫截取後的實際值 (黑色實線)
+                    sns.lineplot(
+                        data=window_actuals,
+                        x=data_cfg.timestamp_col,
+                        y=data_cfg.target_col,
+                        ax=ax,
+                        label="Actual Target",
+                        color="black",
+                        linewidth=1.5,
+                        linestyle="-"
                     )
-        ax.set_title(f"Forecast Validation for Item: {item}")
-        ax.set_xlabel("Time")
-        ax.set_ylabel(data_cfg.target_col)
-        ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1))
 
-    plt.tight_layout()
+                    # 2. 畫預測值 (紅色虛線)
+                    sns.lineplot(
+                        data=item_preds,
+                        x=data_cfg.timestamp_col,
+                        y="mean",
+                        ax=ax,
+                        label="Prediction",
+                        color="red",
+                        linestyle="--",
+                        linewidth=2
+                    )
 
-    save_plot_to_mlflow(fig, plots_dir, mlflow_subdir, filename)
+                    # 3. 畫 90% 信賴區間
+                    if "0.1" in item_preds.columns and "0.9" in item_preds.columns:
+                        ax.fill_between(
+                            item_preds[data_cfg.timestamp_col],
+                            item_preds["0.1"],
+                            item_preds["0.9"],
+                            color="red",
+                            alpha=0.2
+                        )
 
-    return plots_dir / filename
+                    # 【優化】設定 X 軸顯示範圍，確保畫面比例固定
+                    ax.set_xlim(history_start, pred_end)
+
+                ax.set_title(f"{window_name}", fontsize=12)
+                ax.set_xlabel("Time")
+                ax.set_ylabel(data_cfg.target_col)
+                ax.legend(loc='upper left')
+
+            # 隱藏空白子圖
+            for empty_idx in range(n_windows, len(axes)):
+                fig.delaxes(axes[empty_idx])
+
+            plt.suptitle(f"Model: {model_name} | Item: {item}", fontsize=16, y=1.02)
+            plt.tight_layout()
+
+            # 儲存
+            safe_model_name = model_name.replace("/", "_").replace("\\", "_")
+            filename = f"forecast_{safe_model_name}_{item}.png"
+
+            save_plot_to_mlflow(fig, plots_dir, mlflow_subdir, filename)
+            saved_paths.append(plots_dir / filename)
+
+            plt.close(fig)
+
+    return saved_paths

@@ -65,11 +65,15 @@ def run_autogluon_test(
     predictor,
     train_df: pd.DataFrame,
     test_df: pd.DataFrame,
-    config: ExperimentConfig,
+    config: ExperimentConfig
 ) -> dict:
     """
-    使用滑動視窗評估測試集，並將結果記錄至 MLflow。
-    回傳每次 Window 的預測結果與評估指標。
+    使用滑動視窗 (Sliding Window) 評估所有的 AutoGluon TimeSeries 模型，
+    並將各個 Window 的指標與平均指標記錄至 MLflow。
+
+    Returns:
+        dict: 巢狀字典，包含所有模型在不同 Window 的預測結果。
+              格式: { "ModelName": { "window_0": preds_df, "window_1": preds_df, ... } }
     """
     data_cfg = config.data
     ag_cfg = config.autogluon
@@ -78,17 +82,23 @@ def run_autogluon_test(
     stride = ag_cfg.evaluation_stride
     cov_names = data_cfg.known_covariates_names or []
 
-    # 為 test_df 建立時序索引，方便切分視窗
+    # 為了確保切分正確，針對每個 item_id 建立時間序列的索引 (0, 1, 2...)
     test_df = test_df.copy()
+    test_df = test_df.sort_values([data_cfg.item_id_col, data_cfg.timestamp_col])
     test_df['__test_idx'] = test_df.groupby(data_cfg.item_id_col).cumcount()
     max_test_size = test_df['__test_idx'].max() + 1
 
-    window_predictions = {}
-    window_metrics = []
+    # 【新增】取得所有訓練好的模型名稱，避免 AutoGluon 只用 best_model 的警告
+    models = predictor.model_names()
+    logger.info(f"Found {len(models)} models to evaluate: {models}")
+
+    all_model_predictions = {m: {} for m in models}
+    model_metrics = {m: [] for m in models}
 
     # 滑動視窗迴圈
     for w_idx, start_offset in enumerate(range(0, max_test_size - pred_len + 1, stride)):
-        logger.info(f"Evaluating Window {w_idx}: offset={start_offset}")
+        window_name = f"window_{w_idx}"
+        logger.info(f"Evaluating {window_name} (offset={start_offset})")
 
         # 1. 準備截至當前的歷史資料 (train_df + test_df 的前半部)
         history_mask = test_df['__test_idx'] < start_offset
@@ -101,7 +111,7 @@ def run_autogluon_test(
             timestamp_column=data_cfg.timestamp_col
         )
 
-        # 2. 準備預測區間的 Known Covariates 與 Ground Truth
+        # 2. 準備預測區間的 Known Covariates 與 Ground Truth (實際值)
         future_mask = (test_df['__test_idx'] >= start_offset) & (test_df['__test_idx'] < start_offset + pred_len)
         current_future_df = test_df[future_mask].drop(columns=['__test_idx'])
 
@@ -113,37 +123,47 @@ def run_autogluon_test(
                 timestamp_column=data_cfg.timestamp_col
             )
 
-        # 3. 進行預測
-        preds = predictor.predict(ts_history, known_covariates=known_covariates)
-        window_predictions[f"window_{w_idx}"] = preds
+        # 3. 針對每一個模型進行預測與評估
+        for model_name in models:
+            # 明確指定預測使用的模型，消除警告
+            preds = predictor.predict(
+                ts_history,
+                known_covariates=known_covariates,
+                model=model_name
+            )
+            all_model_predictions[model_name][window_name] = preds
 
-        # 4. 計算指標 (RMSE)
-        # 將預測結果的 'mean' 與實際值對齊比較
-        preds_df = preds.reset_index()
+            # --- 計算指標 (RMSE) ---
+            preds_df = preds.reset_index()
 
-        # 【關鍵修復】將 AutoGluon 預設的 index 名稱轉回設定檔中的名稱
-        preds_df = preds_df.rename(columns={
-            "item_id": data_cfg.item_id_col,
-            "timestamp": data_cfg.timestamp_col
-        })
+            # 【關鍵修復】將 AutoGluon 強制的欄位名稱轉回設定檔中的名稱 (例如: trip_date)
+            preds_df = preds_df.rename(columns={
+                "item_id": data_cfg.item_id_col,
+                "timestamp": data_cfg.timestamp_col
+            })
 
-        # 現在可以安全地 merge 了
-        merged = preds_df.merge(
-            current_future_df,
-            on=[data_cfg.item_id_col, data_cfg.timestamp_col],
-            how='inner'
-        )
+            merged = preds_df.merge(
+                current_future_df,
+                on=[data_cfg.item_id_col, data_cfg.timestamp_col],
+                how='inner'
+            )
 
-        if not merged.empty:
-            rmse = mean_squared_error(merged[data_cfg.target_col], merged["mean"])
-            window_metrics.append(rmse)
-            mlflow.log_metric(f"window_{w_idx}_rmse", rmse)
-            logger.info(f"Window {w_idx} RMSE: {rmse:.4f}")
+            if not merged.empty:
+                # 使用 np.sqrt 計算 RMSE 以兼容不同版本的 sklearn
+                rmse = np.sqrt(mean_squared_error(merged[data_cfg.target_col], merged["mean"]))
+                model_metrics[model_name].append(rmse)
 
-    # 記錄整體平均指標
-    if window_metrics:
-        avg_rmse = np.mean(window_metrics)
-        mlflow.log_metric("avg_sliding_window_rmse", avg_rmse)
-        logger.success(f"Completed Sliding Window Eval. Average RMSE: {avg_rmse:.4f}")
+                # 處理模型名稱中的特殊符號，確保 MLflow 標籤格式合法
+                safe_model_name = model_name.replace("/", "_").replace("\\", "_")
+                mlflow.log_metric(f"{safe_model_name}_window_rmse", rmse, step=w_idx)
 
-    return window_predictions
+    # 4. 記錄整體平均指標
+    for model_name, metrics in model_metrics.items():
+        if metrics:
+            avg_rmse = np.mean(metrics)
+            safe_model_name = model_name.replace("/", "_").replace("\\", "_")
+            mlflow.log_metric(f"{safe_model_name}_avg_rmse", avg_rmse)
+            logger.success(f"Model [{model_name}] Average RMSE: {avg_rmse:.4f}")
+
+    logger.info("Sliding window evaluation completed for all models.")
+    return all_model_predictions

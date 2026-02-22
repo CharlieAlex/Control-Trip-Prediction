@@ -24,6 +24,7 @@ class AutoGluonConfig(BaseModel):
     prediction_length: int = 7
     freq: str = "D"
     evaluation_stride: int = 5
+    plot_history_days: int = 60
 
 
 class MLflowConfig(BaseModel):
