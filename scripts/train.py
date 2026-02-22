@@ -52,14 +52,16 @@ def main():
         )
 
         # 4. 執行訓練 (新增 timestamp_col 和 item_id_col 參數)
-        _, leaderboard = run_autogluon_train(
+        predictor, leaderboard = run_autogluon_train(
             train_data=train_df,
             target=config.data["target_col"],
             output_path=MODEL_DIR / current_run_name,
             presets=config.autogluon["presets"],
+            time_limit=config.autogluon["time_limit"],
             prediction_length=config.autogluon["prediction_length"],
             timestamp_col=config.data.get("timestamp_col", "timestamp"),
             item_id_col=config.data.get("item_id_col", "item_id"),
+            known_covariates_names=config.data.get("known_covariates_names", None)
         )
 
         # 5. 繪製圖表
