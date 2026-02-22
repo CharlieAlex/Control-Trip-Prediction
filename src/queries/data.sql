@@ -1,5 +1,5 @@
 DECLARE target_date_start DATE DEFAULT DATE("2025-07-28");
-DECLARE target_date_end DATE DEFAULT DATE("2025-12-10");
+DECLARE target_date_end DATE DEFAULT DATE("2026-02-15");
 
 
 WITH clean_sample AS (
@@ -57,7 +57,6 @@ WITH clean_sample AS (
 SELECT
     a.trip_date,
     1 AS item_id,
-    a.trip_count,
     b.user_count,
     a.trip_count / b.user_count AS trip_per_user
 FROM trip_label_agg a
