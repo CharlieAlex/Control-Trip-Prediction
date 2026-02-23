@@ -15,7 +15,7 @@ sys.path.append(str(MAIN_PATH))
 
 
 from src.config import load_config
-from src.paths import MODEL_DIR, ROOT
+from src.paths import MODEL_DIR, PLOTS_DIR, ROOT
 from src.plot import (
     plot_feature_importance,
     plot_forecast_for_testing,
@@ -50,17 +50,17 @@ def main():
             output_path=MODEL_DIR / current_run_name
         )
 
-        # 5. 繪製圖表
-        plots_dir = ROOT / "plots"
         predictions = run_autogluon_test(
             predictor=predictor,
             train_df=train_df,
             test_df=test_df,
             config=config
         )
-        plot_forecast_for_testing(train_df, test_df, predictions, config, plots_dir)
-        plot_feature_importance(predictor, test_df, plots_dir)
-        plot_leaderboard(leaderboard, plots_dir)
+
+        # 5. 繪製圖表
+        plot_forecast_for_testing(train_df, test_df, predictions, config, PLOTS_DIR)
+        plot_feature_importance(predictor, test_df, PLOTS_DIR)
+        plot_leaderboard(leaderboard, PLOTS_DIR)
 
         # 6. 記錄 Artifacts
         mlflow.log_artifact(str(ROOT / "config.yml"))
