@@ -21,23 +21,23 @@ stages:
     deps:
     - path: config.yml
       hash: md5
-      md5: 76e5be73187043279b72e6e26b567fa7
-      size: 400
+      md5: 6e0a8fe22aaa315c6d85d0109c169d56
+      size: 440
     - path: data/data.parquet
       hash: md5
       md5: 2e58ede39a7d6499f58ae76d7ab61330
       size: 5672
     - path: scripts/train.py
       hash: md5
-      md5: 022bbd52a731d6c909bc002120ed3496
-      size: 2290
+      md5: 2513960e4e569d28598db3a217191995
+      size: 2267
     - path: src/
       hash: md5
-      md5: 53ddf2203b50c9e65c9e8f80f89241d2.dir
-      size: 55120
-      nfiles: 19
+      md5: 7d498a7047451c2105d91bc2d62fe851.dir
+      size: 59072
+      nfiles: 21
     outs:
     - path: data/leaderboard.json
       hash: md5
-      md5: 78afdb8c251bea5a718a7bd47f20ba3a
-      size: 882
+      md5: c13b692928a78b9151fd08aee625858e
+      size: 884

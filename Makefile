@@ -61,4 +61,4 @@ test:
 	dvc repro --no-commit
 
 exp:
-	uv run dvc exp run
+	uv run dvc exp run --no-apply
