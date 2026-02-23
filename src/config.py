@@ -23,6 +23,8 @@ class AutoGluonConfig(BaseModel):
     time_limit: int = 15
     prediction_length: int = 7
     freq: str = "D"
+    eval_metric: str = "WQL"
+    random_state: int = 123
     evaluation_stride: int = 5
     plot_history_days: int = 60
     plot_ymin: Optional[float] = None

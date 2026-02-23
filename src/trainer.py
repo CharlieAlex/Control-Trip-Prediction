@@ -38,6 +38,7 @@ def run_autogluon_train(
     # 建立模型
     predictor = TimeSeriesPredictor(
         target=config_data.target_col,
+        eval_metric=config_ag.eval_metric,
         prediction_length=config_ag.prediction_length,
         path=str(output_path),
         freq=config_ag.freq,
@@ -49,6 +50,7 @@ def run_autogluon_train(
         ts_dataframe,
         presets=config_ag.presets,
         time_limit=config_ag.time_limit,
+        random_seed=config_ag.random_state
     )
 
     # 記錄指標到 MLflow

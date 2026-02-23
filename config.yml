@@ -13,6 +13,8 @@ split:
 autogluon:
   presets: "high_quality"
   time_limit: 300
+  eval_metric: "WQL"
+  random_state: 42
   prediction_length: 10
   plot_history_days: 30
   plot_ymin: 0.000
