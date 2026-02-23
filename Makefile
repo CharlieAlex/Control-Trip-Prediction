@@ -56,3 +56,9 @@ dvc-run:
 
 run:
 	dvc repro
+
+test:
+	dvc repro --no-commit
+
+exp:
+	uv run dvc exp run

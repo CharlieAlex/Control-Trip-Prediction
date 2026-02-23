@@ -5,7 +5,6 @@ data:
   target_col: "trip_per_user"
   timestamp_col: "timestamp"
   item_id_col: "item_id"
-  known_covariates_names: ["user_count"]
 
 split:
   test_size: 0.1
