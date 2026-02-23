@@ -216,6 +216,7 @@ def plot_forecast_for_testing(
     """
     data_cfg = config.data
     ag_cfg = config.autogluon
+    plot_ymin, plot_ymax = ag_cfg.plot_ymin, ag_cfg.plot_ymax
     sns.set_theme(style="whitegrid")
 
     full_actuals = pd.concat([train_df, test_df], ignore_index=True)
@@ -293,6 +294,7 @@ def plot_forecast_for_testing(
 
                     # 【優化】設定 X 軸顯示範圍，確保畫面比例固定
                     ax.set_xlim(history_start, pred_end)
+                    ax.set_ylim(plot_ymin, plot_ymax)
                     ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=5))
                     # ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
 

@@ -25,6 +25,8 @@ class AutoGluonConfig(BaseModel):
     freq: str = "D"
     evaluation_stride: int = 5
     plot_history_days: int = 60
+    plot_ymin: Optional[float] = None
+    plot_ymax: Optional[float] = None
 
 
 class MLflowConfig(BaseModel):

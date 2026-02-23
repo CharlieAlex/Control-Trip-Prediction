@@ -15,6 +15,8 @@ autogluon:
   time_limit: 300
   prediction_length: 10
   plot_history_days: 30
+  plot_ymin: 0.000
+  plot_ymax: 0.025
 
 mlflow:
   tracking_uri: "sqlite:///data/mlflow.db"
